@@ -8,6 +8,7 @@ import sqlalchemy as sa
 import sqlalchemy.sql as sql
 from pkg_resources import parse_version
 from sqlalchemy.dialects.mysql.base import MySQLDialect
+from sqlalchemy.dialects.oracle.base import OracleDialect
 from sqlalchemy.dialects.postgresql.base import PGDialect as PostgreSQLDialect
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.engine.interfaces import Dialect as SQLAlchemyDialect
@@ -25,6 +26,9 @@ import ibis.sql.transforms as transforms
 import ibis.util as util
 from ibis.client import Database, Query, SQLClient
 from ibis.sql.compiler import Dialect, Select, TableSetFormatter, Union
+
+############
+
 
 geospatial_supported = False
 try:
@@ -53,6 +57,14 @@ _ibis_type_to_sqla = {
     dt.Int16: sa.SmallInteger,
     dt.Int32: sa.Integer,
     dt.Int64: sa.BigInteger,
+    # Changed
+    dt.CLOB: sa.CLOB,
+    #dt.NCLOB: sa.NCLOB,
+    #dt.LONG: sa.LONG,
+    #dt.NUMBER: sa.NUMBER,
+    #dt.BFILE: sa.BFILE,
+    #dt.RAW: sa.RAW,
+    dt.LONGRAW: sa.Binary,
 }
 
 
@@ -206,6 +218,44 @@ POSTGRES_FIELD_TO_IBIS_UNIT = {
     "HOUR TO SECOND": "s",
     "MINUTE TO SECOND": "s",
 }
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.CLOB)
+def sa_oracle_CLOB(_, satype, nullable=True):
+    return dt.CLOB(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.NCLOB)
+def sa_oracle_NCLOB(_, satype, nullable=True):
+    return dt.NCLOB(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.LONG)
+def sa_oracle_LONG(_, satype, nullable=True):
+    return dt.LONG(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.NUMBER)
+def sa_oracle_NUMBER(_, satype, nullable=True):
+    return dt.NUMBER(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.BFILE)
+def sa_oracle_BFILE(_, satype, nullable=True):
+    return dt.BFILE(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.dialects.oracle.RAW)
+def sa_oracle_RAW(_, satype, nullable=True):
+    return dt.RAW(nullable=nullable)
+
+
+@dt.dtype.register(OracleDialect, sa.types.BINARY)
+def sa_oracle_LONGRAW(_, satype, nullable=True):
+    return dt.LONGRAW(nullable=nullable)
+
+
+'''-----------------------------------------------------------------'''
 
 
 @dt.dtype.register(PostgreSQLDialect, sa.dialects.postgresql.INTERVAL)

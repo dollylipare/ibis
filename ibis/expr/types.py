@@ -963,6 +963,115 @@ class UUIDColumn(StringColumn, UUIDValue):
     pass  # noqa: E701,E302
 
 
+# ------Changed-----------------------------
+# --------------string type-----------------------------
+class CLOBValue(StringValue):
+    pass  # noqa: E701,E302
+
+
+class CLOBScalar(StringScalar, CLOBValue):
+    pass  # noqa: E701,E302
+
+
+class CLOBColumn(StringColumn, CLOBValue):
+    pass  # noqa: E701,E302
+
+
+# -------------------------------------------
+
+
+class NCLOBValue(StringValue):
+    pass  # noqa: E701,E302
+
+
+class NCLOBScalar(StringScalar, NCLOBValue):
+    pass  # noqa: E701,E302
+
+
+class NCLOBColumn(StringColumn, NCLOBValue):
+    pass  # noqa: E701,E302
+
+
+# -------------------------------------------
+
+
+class LONGValue(StringValue):
+    pass  # noqa: E701,E302
+
+
+class LONGScalar(StringScalar, LONGValue):
+    pass  # noqa: E701,E302
+
+
+class LONGColumn(StringColumn, LONGValue):
+    pass  # noqa: E701,E302
+
+
+# --------------Binary type-----------------------------
+
+
+class BFILEValue(BinaryValue):
+    pass  # noqa: E701,E302
+
+
+class BFILEScalar(BinaryScalar, BFILEValue):
+    pass  # noqa: E701,E302
+
+
+class BFILEColumn(BinaryColumn, BFILEValue):
+    pass  # noqa: E701,E302
+
+
+# -------------------------------------------
+
+
+class RAWValue(BinaryValue):
+    pass  # noqa: E701,E302
+
+
+class RAWScalar(BinaryScalar, RAWValue):
+    pass  # noqa: E701,E302
+
+
+class RAWColumn(BinaryColumn, RAWValue):
+    pass  # noqa: E701,E302
+
+
+# -------------------------------------------
+
+
+class LONGRAWValue(BinaryValue):
+    pass  # noqa: E701,E302
+
+
+class LONGRAWScalar(BinaryScalar, LONGRAWValue):
+    pass  # noqa: E701,E302
+
+
+class LONGRAWColumn(BinaryColumn, LONGRAWValue):
+    pass  # noqa: E701,E302
+
+
+# -------------Number type------------------------------
+
+
+class NumberValue(NumericValue):
+    pass  # noqa: E701,E302
+
+
+class NumberScalar(NumericScalar, NumberValue):
+    pass  # noqa: E701,E302
+
+
+class NumberColumn(NumericColumn, NumberValue):
+    pass  # noqa: E701,E302
+
+
+
+# -------------------------------------------
+# -------------------------------------------
+
+
 class ListExpr(ColumnExpr, AnyValue):
     @property
     def values(self):
