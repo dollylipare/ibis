@@ -42,7 +42,7 @@ class OracleClient(alch.AlchemyClient):
         user: str = getpass.getuser(),
         password: Optional[str] = None,
         # port: int = 1521,
-        database: str = 'dbname',
+        database: str = None,
         url: Optional[str] = None,
         driver: str = 'cx_Oracle',
     ):
@@ -57,7 +57,7 @@ class OracleClient(alch.AlchemyClient):
         else:
             sa_url = sa.engine.url.make_url(url)
         super().__init__(sa.create_engine(sa_url))
-        self.database_name = sa_url.database
+        self.database_name = database
         self.uurl = sa_url
 
     @contextlib.contextmanager
@@ -72,6 +72,7 @@ class OracleClient(alch.AlchemyClient):
 
     def database(self, name=None):
         """Connect to a database called `name`.
+
         Parameters
         ----------
         name : str, optional
@@ -79,8 +80,10 @@ class OracleClient(alch.AlchemyClient):
             the database named ``self.current_database``.
         Returns
         -------
+
         db : OracleDatabase
-            An :class:`ibis.sql.postgres.client.OracleDatabase` instance.
+            An :class:`ibis.sql.oracle.client.OracleDatabase` instance.
+
         Notes
         -----
         This creates a new connection if `name` is both not ``None`` and not
@@ -115,17 +118,10 @@ class OracleClient(alch.AlchemyClient):
         """The name of the current database this client is connected to."""
         return self.database_name
 
-    def list_url(self):
-        return self.uurl
-
-    def list_dbname(self):
-        return self.database_name
-
     def list_databases(self):
         # http://dba.stackexchange.com/a/1304/58517
         return [
-            row.name
-            for row in self.con.execute('select name from v$database')
+            row.name for row in self.con.execute('select name from v$database')
         ]
 
     def list_schemas(self):
@@ -205,5 +201,5 @@ class OracleClient(alch.AlchemyClient):
             out_type=out_type,
             schema=schema,
             replace=replace,
-            name=name
+            name=name,
         )
