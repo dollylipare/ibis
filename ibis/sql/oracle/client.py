@@ -7,7 +7,7 @@ import sqlalchemy as sa
 
 import ibis.sql.alchemy as alch
 from ibis.sql.oracle.compiler import OracleDialect
-from ibis.sql.postgres import udf
+from ibis.sql.oracle import udf
 
 import cx_Oracle  # NOQA fail early if the driver is missing
 
@@ -25,7 +25,7 @@ class OracleDatabase(alch.AlchemyDatabase):
 
 
 class OracleClient(alch.AlchemyClient):
-    """The Ibis PostgreSQL client class
+    """The Ibis Oracle client class
     Attributes
     ----------
     con : sqlalchemy.engine.Engine
@@ -34,7 +34,7 @@ class OracleClient(alch.AlchemyClient):
     dialect = OracleDialect
     database_class = OracleDatabase
     table_class = OracleTable
-    os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
+    os.environ['TNS_ADMIN'] = '/home/reshma_katkar/adb_virt_env'
 
     def __init__(
         self,
@@ -58,7 +58,10 @@ class OracleClient(alch.AlchemyClient):
             sa_url = sa.engine.url.make_url(url)
         super().__init__(sa.create_engine(sa_url))
         self.database_name = database
-        self.uurl = sa_url
+        self.uurl=sa_url
+        
+    def find_db(self):
+        return self.uurl
 
     @contextlib.contextmanager
     def begin(self):
@@ -72,7 +75,6 @@ class OracleClient(alch.AlchemyClient):
 
     def database(self, name=None):
         """Connect to a database called `name`.
-
         Parameters
         ----------
         name : str, optional
@@ -80,10 +82,8 @@ class OracleClient(alch.AlchemyClient):
             the database named ``self.current_database``.
         Returns
         -------
-
         db : OracleDatabase
-            An :class:`ibis.sql.oracle.client.OracleDatabase` instance.
-
+            An :class:`ibis.sql.postgres.client.OracleDatabase` instance.
         Notes
         -----
         This creates a new connection if `name` is both not ``None`` and not
@@ -108,8 +108,8 @@ class OracleClient(alch.AlchemyClient):
         name : str
         Returns
         -------
-        schema : PostgreSQLSchema
-            An :class:`ibis.sql.postgres.client.PostgreSQLSchema` instance.
+        schema : OracleSchema
+            An :class:`ibis.sql.postgres.client.OracleSchema` instance.
         """
         return self.database().schema(name)
 
@@ -121,7 +121,8 @@ class OracleClient(alch.AlchemyClient):
     def list_databases(self):
         # http://dba.stackexchange.com/a/1304/58517
         return [
-            row.name for row in self.con.execute('select name from v$database')
+            row.name
+            for row in self.con.execute('select name from v$database')
         ]
 
     def list_schemas(self):
@@ -140,7 +141,7 @@ class OracleClient(alch.AlchemyClient):
 
     def table(self, name, database=None, schema=None):
         """Create a table expression that references a particular a table
-        called `name` in a PostgreSQL database called `database`.
+        called `name` in a Oracle database called `database`.
         Parameters
         ----------
         name : str
@@ -203,3 +204,4 @@ class OracleClient(alch.AlchemyClient):
             replace=replace,
             name=name,
         )
+

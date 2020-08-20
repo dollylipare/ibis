@@ -10,7 +10,7 @@ import ibis.expr.rules as rlz
 import ibis.udf.validate as v
 from ibis import IbisError
 from ibis.expr.signature import Argument as Arg
-from ibis.sql.alchemy import _to_sqla_type
+from ibis.sql.oracle.alchemy import _to_sqla_type
 from ibis.sql.oracle.compiler import (
     OracleExprTranslator,
     OracleUDFNode,
@@ -217,3 +217,4 @@ $$;
         schema=schema,
         parameters=parameter_names,
     )
+

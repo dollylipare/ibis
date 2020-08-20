@@ -19,6 +19,7 @@ import ibis.expr.datatypes as dt
 import ibis.expr.operations as ops
 import ibis.expr.types as ir
 import ibis.sql.alchemy as alch
+import ibis.sql.oracle.alchemy as ol_alch
 
 # used for literal translate
 from ibis.sql.alchemy import (
@@ -746,23 +747,11 @@ def add_operation(op, translation_func):
     _operation_registry[op] = translation_func
 
 
-'''class PostgreSQLExprTranslator(alch.AlchemyExprTranslator):
+class OracleExprTranslator(ol_alch.AlchemyExprTranslator):
 
     _registry = _operation_registry
-    _rewrites = alch.AlchemyExprTranslator._rewrites.copy()
-    _type_map = alch.AlchemyExprTranslator._type_map.copy()
-    _type_map.update({dt.Double: pg.DOUBLE_PRECISION, dt.Float: pg.REAL})
-
-
-rewrites = PostgreSQLExprTranslator.rewrites
-compiles = PostgreSQLExprTranslator.compiles'''
-
-
-class OracleExprTranslator(alch.AlchemyExprTranslator):
-
-    _registry = _operation_registry
-    _rewrites = alch.AlchemyExprTranslator._rewrites.copy()
-    _type_map = alch.AlchemyExprTranslator._type_map.copy()
+    _rewrites = ol_alch.AlchemyExprTranslator._rewrites.copy()
+    _type_map = ol_alch.AlchemyExprTranslator._type_map.copy()
     _type_map.update({dt.Double: ol.DOUBLE_PRECISION, dt.Float: ol.FLOAT})
 
 
@@ -778,15 +767,9 @@ def _any_all_no_op(expr):
     return expr
 
 
-class OracleDialect(alch.AlchemyDialect):
+class OracleDialect(ol_alch.AlchemyDialect):
     translator = OracleExprTranslator
 
 
 dialect = OracleDialect
 
-
-'''class PostgreSQLDialect(alch.AlchemyDialect):
-    translator = PostgreSQLExprTranslator
-
-
-dialect = PostgreSQLDialect'''
