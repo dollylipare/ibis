@@ -31,10 +31,10 @@ pytest.importorskip('cx_Oracle')
 pytestmark = pytest.mark.oracle
 
 ORACLE_TEST_DB = os.environ.get(
-    'IBIS_TEST_ORACLE_DATABASE', 'db202008111627_medium'
+    'IBIS_TEST_ORACLE_DATABASE', 'oracle_database'
 )
-IBIS_ORACLE_USER = os.environ.get('IBIS_TEST_ORACLE_USER', 'ADMIN')
-IBIS_ORACLE_PASS = os.environ.get('IBIS_TEST_ORACLE_PASSWORD', 'Quant1ph12020')
+IBIS_ORACLE_USER = os.environ.get('IBIS_TEST_ORACLE_USER', 'user')
+IBIS_ORACLE_PASS = os.environ.get('IBIS_TEST_ORACLE_PASSWORD', 'password')
 
 
 def test_table(alltypes):
