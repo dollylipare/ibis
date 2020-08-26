@@ -9,7 +9,6 @@ import ibis.expr.datatypes as dt
 import ibis.expr.schema as sch
 import ibis.expr.types as ir
 import ibis.util as util
-import ibis.sql.oracle.expr.datatypes as dts
 
 try:
     from cytoolz import curry, compose, identity
@@ -98,7 +97,7 @@ def one_of(inners, arg):
 
     rules_formatted = ', '.join(map(repr, inners))
     raise com.IbisTypeError(
-        'rg passes neither of the following rules: {}'.format(inners)
+        'Arg passes neither of the following rules: {}'.format(rules_formatted)
     )
 
 
@@ -257,13 +256,11 @@ date = value(dt.date)
 time = value(dt.time)
 timestamp = value(dt.Timestamp)
 category = value(dt.category)
-number = value(dts.Number)
 temporal = one_of([timestamp, date, time])
 
 strict_numeric = one_of([integer, floating, decimal])
 soft_numeric = one_of([integer, floating, decimal, boolean])
 numeric = soft_numeric
-
 
 set_ = value(dt.Set)
 array = value(dt.Array)

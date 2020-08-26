@@ -27,9 +27,6 @@ from ibis.expr.groupby import GroupedTableExpr  # noqa
 from ibis.expr.random import random  # noqa
 from ibis.expr.schema import Schema
 from ibis.expr.types import (  # noqa
-    NumberValue,
-    NumberScalar,
-    NumberColumn,
     ArrayColumn,
     ArrayScalar,
     ArrayValue,
@@ -3015,9 +3012,8 @@ def parse_url(arg, extract, key=None):
 
     Parameters
     ----------
-    extract : str
-        One of {'PROTOCOL', 'HOST', 'PATH', 'REF', 'AUTHORITY', 'FILE',
-            'USERINFO', 'QUERY'}
+    extract : one of {'PROTOCOL', 'HOST', 'PATH', 'REF',
+                'AUTHORITY', 'FILE', 'USERINFO', 'QUERY'}
     key : string (optional)
 
     Examples

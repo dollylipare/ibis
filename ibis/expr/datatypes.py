@@ -241,46 +241,6 @@ class Timestamp(DataType):
             return typename
         return '{}({!r})'.format(typename, timezone)
 
-class Number(DataType):
-    scalar = ir.NumberScalar
-    column = ir.NumberColumn
-
-    __slots__ = 'precision', 'scale'
-
-    def __init__(
-        self, precision: int, scale: int, nullable: bool = True
-    ) -> None:
-        if not isinstance(precision, numbers.Integral):
-            raise TypeError('Number type precision must be an integer')
-        if not isinstance(scale, numbers.Integral):
-            raise TypeError('Number type scale must be an integer')
-        if precision < 0:
-            raise ValueError('Number type precision cannot be negative')
-        if not precision:
-            raise ValueError('Number type precision cannot be zero')
-        if scale < 0:
-            raise ValueError('Number type scale cannot be negative')
-        if precision < scale:
-            raise ValueError(
-                'Number type precision must be greater than or equal to '
-                'scale. Got precision={:d} and scale={:d}'.format(
-                    precision, scale
-                )
-            )
-
-        super().__init__(nullable=nullable)
-        self.precision = precision  # type: int
-        self.scale = scale  # type: int
-
-    def __str__(self) -> str:
-        return '{}({:d}, {:d})'.format(
-            self.name.lower(), self.precision, self.scale
-        )
-
-    @property
-    def largest(self) -> 'Number':
-        return Number(38, self.scale)
-
 
 class SignedInteger(Integer):
     @property
@@ -1501,25 +1461,6 @@ class TypeParser:
 
             return MultiLineString(geotype=geotype, srid=srid)
 
-
-        elif self._accept(Tokens.NUMBER):
-            if self._accept(Tokens.LPAREN):
-                self._expect(Tokens.INTEGER)
-                assert self.tok is not None
-                precision = self.tok.value
-
-                self._expect(Tokens.COMMA)
-
-                self._expect(Tokens.INTEGER)
-                scale = self.tok.value
-
-                self._expect(Tokens.RPAREN)
-            else:
-                precision = 9
-                scale = 0
-            return Number(precision, scale)
-
-        
         elif self._accept(Tokens.MULTIPOINT):
             geotype = None
             srid = None
@@ -1840,11 +1781,6 @@ def can_cast_decimals(source: Decimal, target: Decimal, **kwargs) -> bool:
         target.precision >= source.precision and target.scale >= source.scale
     )
 
-@castable.register(Number, Number)
-def can_cast_numbers(source: Number, target: Number, **kwargs) -> bool:
-    return (
-        target.precision >= source.precision and target.scale >= source.scale
-    )
 
 @castable.register(Interval, Interval)
 def can_cast_intervals(source: Interval, target: Interval, **kwargs) -> bool:
