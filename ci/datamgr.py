@@ -12,7 +12,7 @@ import pandas as pd
 import sqlalchemy as sa
 from plumbum import local
 from toolz import dissoc
-
+os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
 SCRIPT_DIR = Path(__file__).parent.absolute()
 DATA_DIR_NAME = 'ibis-testing-data'
 DATA_DIR = Path(
@@ -65,6 +65,7 @@ def init_database(driver, params, schema=None, recreate=True, **kwargs):
         recreate_database(driver, new_params, **kwargs)
 
     url = sa.engine.url.URL(driver, **new_params)
+    #url = url='oracle://{user}:{password}@{sid}'.format(user=new_params['username'],password=new_params['password'],sid=new_params['database'])
     engine = sa.create_engine(url, **kwargs)
 
     if schema:
@@ -476,6 +477,26 @@ def clickhouse(schema, tables, data_directory, **params):
         insert(engine, table, df)
 
 
+#Oracle database connection
+@cli.command()
+@click.option('-h', '--host', default='adb.us-ashburn-1.oraclecloud.com')
+@click.option('-P', '--port', default=1522, type=int)
+@click.option('-u', '--user', default='ADMIN')
+@click.option('-p', '--password', default='Quant1ph12020')
+@click.option('-D', '--database', default='db202008111627_medium')
+@click.option(
+    '-S',
+    '--schema',
+    type=click.File('rt'),
+    default=str(SCRIPT_DIR / 'schema' / 'oracle.sql'),
+)
+@click.option('-t', '--tables', multiple=True, default=TEST_TABLES)
+@click.option('-d', '--data-directory', default=DATA_DIR)
+def oracle(schema, tables, data_directory, **params):
+    data_directory = Path(data_directory)
+    engine = init_database('oracle+cx_oracle', params, schema)
+    insert_tables(engine, tables, data_directory)
+
 @cli.command()
 @click.option('-d', '--data-directory', default=DATA_DIR)
 @click.option('-i', '--ignore-missing-dependency', is_flag=True, default=False)
@@ -612,56 +633,6 @@ def bigquery(data_directory, ignore_missing_dependency, **params):
 
     if job.error_result:
         raise click.ClickException(str(job.error_result))
-
-
-@cli.command()
-def pandas(**params):
-    """
-    The pandas backend does not need test data, but we still
-    have an option for the backend for consistency, and to not
-    have to avoid calling `./datamgr.py pandas` in the CI.
-    """
-    pass
-
-
-@cli.command()
-def csv(**params):
-    """
-    The csv backend does not need test data, but we still
-    have an option for the backend for consistency, and to not
-    have to avoid calling `./datamgr.py csv` in the CI.
-    """
-    pass
-
-
-@cli.command()
-def hdf5(**params):
-    """
-    The hdf5 backend does not need test data, but we still
-    have an option for the backend for consistency, and to not
-    have to avoid calling `./datamgr.py hdf5` in the CI.
-    """
-    pass
-
-
-@cli.command()
-def spark(**params):
-    """
-    The spark backend does not need test data, but we still
-    have an option for the backend for consistency, and to not
-    have to avoid calling `./datamgr.py spark` in the CI.
-    """
-    pass
-
-
-@cli.command()
-def pyspark(**params):
-    """
-    The hdf5 backend does not need test data, but we still
-    have an option for the backend for consistency, and to not
-    have to avoid calling `./datamgr.py pyspark` in the CI.
-    """
-    pass
 
 
 if __name__ == '__main__':

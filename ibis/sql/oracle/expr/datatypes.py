@@ -5,6 +5,7 @@ from typing import Tuple, TypeVar, Union
 from multipledispatch import Dispatcher
 import ibis.expr.datatypes as dt
 import ibis.sql.oracle.expr.types as ir
+import numbers
 
 class CLOB(dt.String):
     scalar = ir.CLOBScalar
@@ -40,6 +41,7 @@ class Number(dt.DataType):
     def __init__(
         self, precision: int, scale: int, nullable: bool = True
     ) -> None:
+        print(precision)
         if not isinstance(precision, numbers.Integral):
             raise TypeError('Number type precision must be an integer')
         if not isinstance(scale, numbers.Integral):

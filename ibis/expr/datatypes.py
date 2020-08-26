@@ -241,6 +241,46 @@ class Timestamp(DataType):
             return typename
         return '{}({!r})'.format(typename, timezone)
 
+class Number(DataType):
+    scalar = ir.NumberScalar
+    column = ir.NumberColumn
+
+    __slots__ = 'precision', 'scale'
+
+    def __init__(
+        self, precision: int, scale: int, nullable: bool = True
+    ) -> None:
+        if not isinstance(precision, numbers.Integral):
+            raise TypeError('Number type precision must be an integer')
+        if not isinstance(scale, numbers.Integral):
+            raise TypeError('Number type scale must be an integer')
+        if precision < 0:
+            raise ValueError('Number type precision cannot be negative')
+        if not precision:
+            raise ValueError('Number type precision cannot be zero')
+        if scale < 0:
+            raise ValueError('Number type scale cannot be negative')
+        if precision < scale:
+            raise ValueError(
+                'Number type precision must be greater than or equal to '
+                'scale. Got precision={:d} and scale={:d}'.format(
+                    precision, scale
+                )
+            )
+
+        super().__init__(nullable=nullable)
+        self.precision = precision  # type: int
+        self.scale = scale  # type: int
+
+    def __str__(self) -> str:
+        return '{}({:d}, {:d})'.format(
+            self.name.lower(), self.precision, self.scale
+        )
+
+    @property
+    def largest(self) -> 'Number':
+        return Number(38, self.scale)
+
 
 class SignedInteger(Integer):
     @property
@@ -807,95 +847,7 @@ class UUID(String):
     __slots__ = ()
 
 
-class CLOB(String):
-
-    scalar = ir.CLOBScalar
-    column = ir.CLOBColumn
-
-    __slots__ = ()
-
-
-class NCLOB(String):
-
-    scalar = ir.NCLOBScalar
-    column = ir.NCLOBColumn
-
-    __slots__ = ()
-
-
-class LONG(String):
-
-    scalar = ir.LONGScalar
-    column = ir.LONGColumn
-
-    __slots__ = ()
-
-
-class BFILE(Binary):
-
-    scalar = ir.BFILEScalar
-    column = ir.BFILEColumn
-
-    __slots__ = ()
-
-
-class RAW(Binary):
-
-    scalar = ir.RAWScalar
-    column = ir.RAWColumn
-
-    __slots__ = ()
-
-
-class LONGRAW(Binary):
-
-    scalar = ir.LONGRAWScalar
-    column = ir.LONGRAWColumn
-
-    __slots__ = ()
-
-
-class Number(DataType):
-    scalar = ir.NumberScalar
-    column = ir.NumberColumn
-
-    __slots__ = 'precision', 'scale'
-
-    def __init__(
-        self, precision: int, scale: int, nullable: bool = True
-    ) -> None:
-        if not isinstance(precision, numbers.Integral):
-            raise TypeError('Number type precision must be an integer')
-        if not isinstance(scale, numbers.Integral):
-            raise TypeError('Number type scale must be an integer')
-        if precision < 0:
-            raise ValueError('Number type precision cannot be negative')
-        if not precision:
-            raise ValueError('Number type precision cannot be zero')
-        if scale < 0:
-            raise ValueError('Number type scale cannot be negative')
-        if precision < scale:
-            raise ValueError(
-                'Number type precision must be greater than or equal to '
-                'scale. Got precision={:d} and scale={:d}'.format(
-                    precision, scale
-                )
-            )
-
-        super().__init__(nullable=nullable)
-        self.precision = precision  # type: int
-        self.scale = scale  # type: int
-
-    def __str__(self) -> str:
-        return '{}({:d}, {:d})'.format(
-            self.name.lower(), self.precision, self.scale
-        )
-
-    @property
-    def largest(self) -> 'Number':
-        return Number(38, self.scale)
-
-
+# ---------------------------------------------------------------------
 any = Any()
 null = Null()
 boolean = Boolean()
@@ -936,17 +888,6 @@ json = JSON()
 jsonb = JSONB()
 # special string based data type
 uuid = UUID()
-clob = CLOB()
-
-nclob = NCLOB()
-
-long = LONG()
-
-bfile = BFILE()
-
-raw = RAW()
-
-longraw = LONGRAW()
 
 _primitive_types = [
     ('any', any),
@@ -974,10 +915,12 @@ _primitive_types = [
     ('timestamp', timestamp),
     ('interval', interval),
     ('category', category),
-]
+]  # type: List[Tuple[str, DataType]]
 
 
 class Tokens:
+    """Class to hold tokens for lexing."""
+
     __slots__ = ()
 
     ANY = 0
@@ -1014,13 +957,6 @@ class Tokens:
     JSON = 31
     JSONB = 32
     UUID = 33
-    CLOB = 34
-    NCLOB = 35
-    LONG = 36
-    NUMBER = 37
-    BFILE = 38
-    RAW = 39
-    LONGRAW = 40
 
     @staticmethod
     def name(value):
@@ -1102,7 +1038,6 @@ _TYPE_RULES = collections.OrderedDict(
                 'map',
                 'struct',
                 'interval',
-                'number',
             ),
             (
                 Tokens.DECIMAL,
@@ -1113,7 +1048,6 @@ _TYPE_RULES = collections.OrderedDict(
                 Tokens.MAP,
                 Tokens.STRUCT,
                 Tokens.INTERVAL,
-                Tokens.NUMBER,
             ),
         )
     ]
@@ -1281,7 +1215,98 @@ class TypeParser:
             )
 
     def type(self) -> DataType:
+        """
+        type : primitive
+             | decimal
+             | array
+             | set
+             | map
+             | struct
 
+        primitive : "any"
+                  | "null"
+                  | "bool"
+                  | "boolean"
+                  | "int8"
+                  | "int16"
+                  | "int32"
+                  | "int64"
+                  | "uint8"
+                  | "uint16"
+                  | "uint32"
+                  | "uint64"
+                  | "halffloat"
+                  | "float"
+                  | "double"
+                  | "float16"
+                  | "float32"
+                  | "float64"
+                  | "string"
+                  | "time"
+
+        timestamp : "timestamp"
+                  | "timestamp" "(" timezone ")"
+
+        interval : "interval"
+                 | "interval" "(" unit ")"
+                 | "interval" "<" type ">" "(" unit ")"
+
+        decimal : "decimal"
+                | "decimal" "(" integer "," integer ")"
+
+        integer : [0-9]+
+
+        array : "array" "<" type ">"
+
+        set : "set" "<" type ">"
+
+        map : "map" "<" type "," type ">"
+
+        struct : "struct" "<" field ":" type ("," field ":" type)* ">"
+
+        field : [a-zA-Z_][a-zA-Z_0-9]*
+
+        geography: "geography"
+
+        geometry: "geometry"
+
+        point : "point"
+              | "point" ";" srid
+              | "point" ":" geotype
+              | "point" ";" srid ":" geotype
+
+        linestring : "linestring"
+                   | "linestring" ";" srid
+                   | "linestring" ":" geotype
+                   | "linestring" ";" srid ":" geotype
+
+        polygon : "polygon"
+                | "polygon" ";" srid
+                | "polygon" ":" geotype
+                | "polygon" ";" srid ":" geotype
+
+        multilinestring : "multilinestring"
+                   | "multilinestring" ";" srid
+                   | "multilinestring" ":" geotype
+                   | "multilinestring" ";" srid ":" geotype
+
+        multipoint : "multipoint"
+                   | "multipoint" ";" srid
+                   | "multipoint" ":" geotype
+                   | "multipoint" ";" srid ":" geotype
+
+        multipolygon : "multipolygon"
+                     | "multipolygon" ";" srid
+                     | "multipolygon" ":" geotype
+                     | "multipolygon" ";" srid ":" geotype
+
+        json : "json"
+
+        jsonb : "jsonb"
+
+        uuid : "uuid"
+
+        """
         if self._accept(Tokens.PRIMITIVE):
             assert self.tok is not None
             return self.tok.value
@@ -1476,6 +1501,25 @@ class TypeParser:
 
             return MultiLineString(geotype=geotype, srid=srid)
 
+
+        elif self._accept(Tokens.NUMBER):
+            if self._accept(Tokens.LPAREN):
+                self._expect(Tokens.INTEGER)
+                assert self.tok is not None
+                precision = self.tok.value
+
+                self._expect(Tokens.COMMA)
+
+                self._expect(Tokens.INTEGER)
+                scale = self.tok.value
+
+                self._expect(Tokens.RPAREN)
+            else:
+                precision = 9
+                scale = 0
+            return Number(precision, scale)
+
+        
         elif self._accept(Tokens.MULTIPOINT):
             geotype = None
             srid = None
@@ -1513,41 +1557,6 @@ class TypeParser:
         # special string based data types
         elif self._accept(Tokens.UUID):
             return UUID()
-
-        elif self._accept(Tokens.CLOB):
-            return CLOB()
-
-        elif self._accept(Tokens.NCLOB):
-            return NCLOB()
-
-        elif self._accept(Tokens.LONG):
-            return LONG()
-
-        elif self._accept(Tokens.NUMBER):
-            if self._accept(Tokens.LPAREN):
-                self._expect(Tokens.INTEGER)
-                assert self.tok is not None
-                precision = self.tok.value
-
-                self._expect(Tokens.COMMA)
-
-                self._expect(Tokens.INTEGER)
-                scale = self.tok.value
-
-                self._expect(Tokens.RPAREN)
-            else:
-                precision = 9
-                scale = 0
-            return Number(precision, scale)
-
-        elif self._accept(Tokens.BFILE):
-            return BFILE()
-
-        elif self._accept(Tokens.RAW):
-            return RAW()
-
-        elif self._accept(Tokens.LONGRAW):
-            return LONGRAW()
 
         else:
             raise SyntaxError('Type cannot be parsed: {}'.format(self.text))
@@ -1831,6 +1840,11 @@ def can_cast_decimals(source: Decimal, target: Decimal, **kwargs) -> bool:
         target.precision >= source.precision and target.scale >= source.scale
     )
 
+@castable.register(Number, Number)
+def can_cast_numbers(source: Number, target: Number, **kwargs) -> bool:
+    return (
+        target.precision >= source.precision and target.scale >= source.scale
+    )
 
 @castable.register(Interval, Interval)
 def can_cast_intervals(source: Interval, target: Interval, **kwargs) -> bool:
@@ -1889,43 +1903,6 @@ def can_cast_json(source, target, **kwargs):
 @castable.register(JSONB, JSONB)
 def can_cast_jsonb(source, target, **kwargs):
     return True
-
-
-@castable.register(CLOB, CLOB)
-def can_cast_clob(source, target, **kwargs):
-    return True
-
-
-@castable.register(NCLOB, NCLOB)
-def can_cast_nclob(source, target, **kwargs):
-    return True
-
-
-@castable.register(LONG, LONG)
-def can_cast_long(source, target, **kwargs):
-    return True
-
-
-@castable.register(BFILE, BFILE)
-def can_cast_bfile(source, target, **kwargs):
-    return True
-
-
-@castable.register(RAW, RAW)
-def can_cast_raw(source, target, **kwargs):
-    return True
-
-
-@castable.register(LONGRAW, LONGRAW)
-def can_cast_longraw(source, target, **kwargs):
-    return True
-
-
-@castable.register(Number, Number)
-def can_cast_numbers(source: Number, target: Number, **kwargs) -> bool:
-    return (
-        target.precision >= source.precision and target.scale >= source.scale
-    )
 
 
 # geo spatial data type
@@ -2026,3 +2003,4 @@ def same_kind_left_null(_: Null, b: DataType) -> bool:
 def same_kind_both_null(a: Null, b: Null) -> bool:
     """Return ``True``."""
     return True
+

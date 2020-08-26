@@ -78,7 +78,7 @@ def sa_oracle_LONG(_, satype, nullable=True):
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.NUMBER)
 def sa_oracle_NUMBER(_, satype, nullable=True):
-    return dt.NUMBER(nullable=nullable)
+    return dt.Number(satype.precision, satype.scale, nullable=nullable)
 
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.BFILE)

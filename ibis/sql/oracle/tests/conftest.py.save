@@ -18,32 +18,30 @@ import os
 import pytest
 
 import ibis
-import ibis.sql.oracle.api
+from ibis.sql.oracle.api import connect
+
+
 OL_USER = os.environ.get(
     'IBIS_TEST_ORACLE_USER', os.environ.get('OLUSER', 'ADMIN')
 )
 OL_PASS = os.environ.get(
-    'IBIS_TEST_ORACLE_PASSWORD', os.environ.get('OLPASSWORD', 'password')
+    'IBIS_TEST_ORACLE_PASSWORD', os.environ.get('OLPASSWORD', 'Quant1ph12020')
 )
-IBIS_TEST_ORACLE_DB = os.environ.get(
-    'IBIS_TEST_ORACLE_DATABASE', os.environ.get('OLDATABASE', 'ibis_testing')
+OL_DB = os.environ.get(
+    'IBIS_TEST_ORACLE_DATABASE', os.environ.get('OLDATABASE', 'db202008111627_medium')
 )
 
 
 def _random_identifier(suffix):
     return '__ibis_test_{}_{}'.format(suffix, ibis.util.guid())
 
-
 @pytest.fixture(scope='session')
 def con():
-    return ibis.sql.oracle.api.connect("ADMIN","Quant1ph12020","db202008111627_medium")
-    '''return ibis.sql.oracle.api.connect(
+    return ibis.sql.oracle.api.connect(
         user=OL_USER,
         password=OL_PASS,
-        database=IBIS_TEST_ORACLE_DB,
-    )'''
-   #return ibis.sql.oracle.api.connect("ADMIN","Quant1ph12020","db202008111627_medium")
-
+        database=OL_DB,
+    )
 
 @pytest.fixture(scope='module')
 def db(con):
@@ -108,3 +106,6 @@ def temp_table(con) -> str:
         yield name
     finally:
         con.drop_table(name, force=True)
+
+
+

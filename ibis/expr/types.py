@@ -835,6 +835,16 @@ class JSONBScalar(BinaryScalar, JSONBValue):
 class JSONBColumn(BinaryColumn, JSONBValue):
     pass  # noqa: E701,E302
 
+class NumberValue(NumericValue):
+    pass  # noqa: E701,E302
+
+
+class NumberScalar(NumericScalar, NumberValue):
+    pass  # noqa: E701,E302
+
+
+class NumberColumn(NumericColumn, NumberValue):
+    pass  # noqa: E701,E302
 
 class StructValue(AnyValue):
     def __dir__(self):

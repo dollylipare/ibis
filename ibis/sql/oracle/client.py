@@ -56,7 +56,7 @@ class OracleClient(alch.AlchemyClient):
             )
         else:
             sa_url = sa.engine.url.make_url(url)
-        super().__init__(sa.create_engine(sa_url))
+        super().__init__(sa.create_engine(sa_url,max_identifier_length=128))
         self.database_name = database
         self.uurl=sa_url
         

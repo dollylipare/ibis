@@ -6,7 +6,7 @@ import pytest
 
 import ibis
 import ibis.expr.datatypes as dt
-from ibis.sql.oracle import existing_udf, udf
+from ibis.sql.oracle.udf.api import existing_udf, udf
 from ibis.sql.oracle.udf.api import OracleUDFError
 
 # mark test module as oracle (for ability to easily exclude,
@@ -23,14 +23,17 @@ pytestmark = [
 
 @pytest.fixture(scope='session')
 def next_serial(con):
-    serial_proxy = con.con.execute("SELECT nextval('test_sequence') as value;")
+    serial_proxy = con.con.execute("select test_sequence.nextval as value from dual")
     return serial_proxy.fetchone()['value']
 
 
 @pytest.fixture(scope='session')
 def test_schema(con, next_serial):
     schema_name = 'udf_test_{}'.format(next_serial)
-    con.con.execute("CREATE SCHEMA IF NOT EXISTS {};".format(schema_name))
+    schema_name='"{}"'.format(schema_name)
+    #con.con.execute("CREATE USER {};".format(schema_name))
+    con.con.execute("CREATE USER "+ schema_name)
+   #  + '"'+ schema_name +'"
     return schema_name
 
 
@@ -41,21 +44,23 @@ def table_name():
 
 @pytest.fixture(scope='session')
 def sql_table_setup(test_schema, table_name):
-    return """DROP TABLE IF EXISTS {schema}.{table_name};
-CREATE TABLE {schema}.{table_name} (
+   # return CREATE TABLE {schema}.{table_name}(user_id integer, user_name varchar(50), name_length integer); GRANT UNLIMITED TABLESPACE TO {schema}; INSERT INTO {schema}.{table_name}(user_id, user_name, name_length)(SELECT 1, 'Raj', 3 FROM  dual) UNION ALL(SELECT 2, 'Judy', 4 FROM dual) UNION ALL(SELECT 3, 'Jonathan', 8 FROM dual );
+#.format(schema=test_schema, table_name=table_name)
+    return """CREATE TABLE {schema}.{table_name} (
     user_id integer,
-    user_name varchar,
+    user_name varchar(50),
     name_length integer
 );
-INSERT INTO {schema}.{table_name} VALUES
-(1, 'Raj', 3),
-(2, 'Judy', 4),
-(3, 'Jonathan', 8)
+    GRANT UNLIMITED TABLESPACE TO {schema};
+    INSERT INTO {schema}.{table_name}(user_id,user_name,name_length) 
+    (SELECT 1, 'Raj', 3 FROM dual) UNION ALL 
+    (SELECT 2, 'Judy', 4 FROM dual) UNION ALL 
+    (SELECT 3, 'Jonathan', 8 FROM dual )
 ;
 """.format(
         schema=test_schema, table_name=table_name
     )
-
+#sql_table_setup('test','test_tbl')
 
 @pytest.fixture(scope='session')
 def sql_define_py_udf(test_schema):
@@ -94,7 +99,7 @@ def con_for_udf(
         yield con
     finally:
         # teardown
-        con.con.execute("DROP SCHEMA IF EXISTS {} CASCADE".format(test_schema))
+        con.con.execute("DROP USER".format(test_schema))
 
 
 @pytest.fixture
@@ -237,3 +242,4 @@ def test_client_udf_decorator_fails(con_for_udf, test_schema):
             schema=test_schema,
             replace=True,
         )
+

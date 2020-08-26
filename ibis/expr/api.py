@@ -27,6 +27,9 @@ from ibis.expr.groupby import GroupedTableExpr  # noqa
 from ibis.expr.random import random  # noqa
 from ibis.expr.schema import Schema
 from ibis.expr.types import (  # noqa
+    NumberValue,
+    NumberScalar,
+    NumberColumn,
     ArrayColumn,
     ArrayScalar,
     ArrayValue,

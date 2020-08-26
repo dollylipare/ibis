@@ -16,6 +16,7 @@ from sqlalchemy.engine.interfaces import Dialect as SQLAlchemyDialect
 import ibis
 import ibis.common.exceptions as com
 import ibis.expr.analysis as L
+import ibis.sql.oracle.expr.datatypes as dts
 import ibis.expr.datatypes as dt
 import ibis.expr.operations as ops
 import ibis.expr.schema as sch
@@ -58,13 +59,13 @@ _ibis_type_to_sqla = {
     dt.Int32: sa.Integer,
     dt.Int64: sa.BigInteger,
     # Changed
-    dt.CLOB: sa.CLOB,
+    dts.CLOB: sa.CLOB,
     #dt.NCLOB: sa.NCLOB,
     #dt.LONG: sa.LONG,
     #dt.NUMBER: sa.NUMBER,
     #dt.BFILE: sa.BFILE,
     #dt.RAW: sa.RAW,
-    dt.LONGRAW: sa.Binary,
+    dts.LONGRAW: sa.Binary,
 }
 
 
@@ -222,22 +223,22 @@ POSTGRES_FIELD_TO_IBIS_UNIT = {
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.CLOB)
 def sa_oracle_CLOB(_, satype, nullable=True):
-    return dt.CLOB(nullable=nullable)
+    return dts.CLOB(nullable=nullable)
 
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.NCLOB)
 def sa_oracle_NCLOB(_, satype, nullable=True):
-    return dt.NCLOB(nullable=nullable)
+    return dts.NCLOB(nullable=nullable)
 
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.LONG)
 def sa_oracle_LONG(_, satype, nullable=True):
-    return dt.LONG(nullable=nullable)
+    return dts.LONG(nullable=nullable)
 
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.NUMBER)
 def sa_oracle_NUMBER(_, satype, nullable=True):
-    return dt.NUMBER(nullable=nullable)
+    return dts.Number(satype.precision, satype.scale, nullable=nullable)
 
 
 @dt.dtype.register(OracleDialect, sa.dialects.oracle.BFILE)
@@ -783,7 +784,7 @@ _operation_registry = {
     ops.Sqrt: unary(sa.func.sqrt),
     ops.Ceil: unary(sa.func.ceil),
     ops.Floor: unary(sa.func.floor),
-    ops.Power: fixed_arity(sa.func.pow, 2),
+    ops.Power: fixed_arity(sa.func.power, 2),
     ops.FloorDivide: _floor_divide,
 }
 
@@ -1692,3 +1693,4 @@ def _maybe_to_geodataframe(df, schema):
         if geom_col:
             df = geopandas.GeoDataFrame(df, geometry=geom_col)
     return df
+
