@@ -481,9 +481,9 @@ def clickhouse(schema, tables, data_directory, **params):
 @cli.command()
 @click.option('-h', '--host', default='adb.us-ashburn-1.oraclecloud.com')
 @click.option('-P', '--port', default=1522, type=int)
-@click.option('-u', '--user', default='ADMIN')
-@click.option('-p', '--password', default='Quant1ph12020')
-@click.option('-D', '--database', default='db202008111627_medium')
+@click.option('-u', '--user', default='USER')
+@click.option('-p', '--password', default='PASSWORD')
+@click.option('-D', '--database', default='DATABASE')
 @click.option(
     '-S',
     '--schema',

@@ -3041,7 +3041,7 @@ def _string_contains(arg, substr):
     -------
     contains : ibis.expr.types.BooleanValue
     """
-    return arg.find(substr) >= 0
+    return arg.find(substr)
 
 
 def _string_split(arg, delimiter):

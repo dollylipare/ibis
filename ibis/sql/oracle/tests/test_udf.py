@@ -6,7 +6,8 @@ import pytest
 
 import ibis
 import ibis.expr.datatypes as dt
-from ibis.sql.oracle.udf.api import existing_udf, udf
+from ibis.sql.oracle.udf.api import existing_udf
+from ibis.sql.oracle.udf.api import udf
 from ibis.sql.oracle.udf.api import OracleUDFError
 
 # mark test module as oracle (for ability to easily exclude,
@@ -20,201 +21,94 @@ pytestmark = [
 
 # Database setup (tables and UDFs)
 
-
 @pytest.fixture(scope='session')
 def next_serial(con):
     serial_proxy = con.con.execute("select test_sequence.nextval as value from dual")
     return serial_proxy.fetchone()['value']
 
-
 @pytest.fixture(scope='session')
 def test_schema(con, next_serial):
     schema_name = 'udf_test_{}'.format(next_serial)
-    schema_name='"{}"'.format(schema_name)
-    #con.con.execute("CREATE USER {};".format(schema_name))
-    con.con.execute("CREATE USER "+ schema_name)
-   #  + '"'+ schema_name +'"
+    #schema_name='"{}"'.format(schema_name)
+    print(schema_name)
+    con.con.execute("CREATE USER {}".format(schema_name))
+    #con.con.execute("CREATE USER "+ schema_name)
     return schema_name
-
 
 @pytest.fixture(scope='session')
 def table_name():
-    return 'udf_test_users'
+    return 'udf_user_list_11'
 
 
 @pytest.fixture(scope='session')
 def sql_table_setup(test_schema, table_name):
-   # return CREATE TABLE {schema}.{table_name}(user_id integer, user_name varchar(50), name_length integer); GRANT UNLIMITED TABLESPACE TO {schema}; INSERT INTO {schema}.{table_name}(user_id, user_name, name_length)(SELECT 1, 'Raj', 3 FROM  dual) UNION ALL(SELECT 2, 'Judy', 4 FROM dual) UNION ALL(SELECT 3, 'Jonathan', 8 FROM dual );
-#.format(schema=test_schema, table_name=table_name)
     return """CREATE TABLE {schema}.{table_name} (
-    user_id integer,
-    user_name varchar(50),
-    name_length integer
-);
-    GRANT UNLIMITED TABLESPACE TO {schema};
-    INSERT INTO {schema}.{table_name}(user_id,user_name,name_length) 
-    (SELECT 1, 'Raj', 3 FROM dual) UNION ALL 
-    (SELECT 2, 'Judy', 4 FROM dual) UNION ALL 
-    (SELECT 3, 'Jonathan', 8 FROM dual )
-;
-""".format(
-        schema=test_schema, table_name=table_name
-    )
-#sql_table_setup('test','test_tbl')
+            user_id integer,
+            user_name varchar(50),
+            name_length integer
+)""".format(
+            schema=test_schema, table_name=table_name
+        )
 
 @pytest.fixture(scope='session')
-def sql_define_py_udf(test_schema):
-    return """CREATE OR REPLACE FUNCTION {schema}.pylen(x varchar)
-RETURNS integer
-LANGUAGE plpythonu
-AS
-$$
-return len(x)
-$$;""".format(
-        schema=test_schema
-    )
+def permission_schema(test_schema):
+    return '''GRANT UNLIMITED TABLESPACE TO {schema}'''.format(
+            schema=test_schema
+        )
+
+@pytest.fixture(scope='session')
+def sql_table_Insert(test_schema, table_name):
+    return """INSERT INTO {schema}.{table_name}(user_id, user_name, name_length)
+    (SELECT 1, 'Raj', 3 FROM dual) UNION ALL
+    (SELECT 2, 'Judy', 4 FROM dual) UNION ALL 
+    (SELECT 3, 'Jonathan', 8 FROM dual)""".format(
+            schema=test_schema, table_name=table_name
+        )
 
 
 @pytest.fixture(scope='session')
 def sql_define_udf(test_schema):
-    return """CREATE OR REPLACE FUNCTION {schema}.custom_len(x varchar)
-RETURNS integer
-LANGUAGE SQL
-AS
-$$
-SELECT length(x);
-$$;""".format(
+    return """CREATE OR REPLACE FUNCTION {schema}.addition_func(n1 in number, n2 in number)
+RETURN number
+is
+n3 number(8);
+begin
+n3 := n1+n2;
+return n3;
+end;""".format(
         schema=test_schema
     )
 
 
 @pytest.fixture(scope='session')
 def con_for_udf(
-    con, test_schema, sql_table_setup, sql_define_udf, sql_define_py_udf
+    con, test_schema,table_name, sql_table_setup,permission_schema,sql_table_Insert, sql_define_udf
 ):
     con.con.execute(sql_table_setup)
+    con.con.execute(permission_schema)
+    con.con.execute(sql_table_Insert)
     con.con.execute(sql_define_udf)
-    con.con.execute(sql_define_py_udf)
+
     try:
         yield con
     finally:
         # teardown
-        con.con.execute("DROP USER".format(test_schema))
-
+        print("In finally block")
+        #con.con.execute("DROP USER "+test_schema +" cascade")
+        #con.con.execute("DROP USER schema CASCADE".format(test_schema))
 
 @pytest.fixture
 def table(con_for_udf, table_name, test_schema):
     return con_for_udf.table(table_name, schema=test_schema)
 
-
 # Tests
 
-
-def test_existing_sql_udf(test_schema, table):
-    """Test creating ibis UDF object based on existing UDF in the database"""
-    # Create ibis UDF objects referring to UDFs already created in the database
-    custom_length_udf = existing_udf(
-        'custom_len',
-        input_types=[dt.string],
-        output_type=dt.int32,
-        schema=test_schema,
-    )
-    result_obj = table[
-        table, custom_length_udf(table['user_name']).name('custom_len')
-    ]
-    result = result_obj.execute()
-    assert result['custom_len'].sum() == result['name_length'].sum()
-
-
-def test_existing_plpython_udf(test_schema, table):
-    # Create ibis UDF objects referring to UDFs already created in the database
-    py_length_udf = existing_udf(
-        'pylen',
-        input_types=[dt.string],
-        output_type=dt.int32,
-        schema=test_schema,
-    )
-    result_obj = table[
-        table, py_length_udf(table['user_name']).name('custom_len')
-    ]
-    result = result_obj.execute()
-    assert result['custom_len'].sum() == result['name_length'].sum()
-
-
-def mult_a_b(a, b):
-    """Test function to be defined in-database as a UDF
-    and used via ibis UDF"""
-    return a * b
-
-
-def test_udf(con_for_udf, test_schema, table):
-    """Test creating a UDF in database based on Python function
-    and then creating an ibis UDF object based on that"""
-    mult_a_b_udf = udf(
-        con_for_udf,
-        mult_a_b,
-        (dt.int32, dt.int32),
-        dt.int32,
-        schema=test_schema,
-        replace=True,
-    )
-    table_filt = table.filter(table['user_id'] == 2)
-    expr = table_filt[
-        mult_a_b_udf(table_filt['user_id'], table_filt['name_length']).name(
-            'mult_result'
-        )
-    ]
-    result = expr.execute()
-    assert result['mult_result'].iloc[0] == 8
 
 
 def pysplit(text, split):
     return text.split(split)
 
 
-def test_array_type(con_for_udf, test_schema, table):
-    """Test that usage of Array types work
-    Other scalar types can be represented either by the class or an instance,
-    but Array types work differently. Array types must be an instance,
-    because the Array class must be instantiated specifying the datatype
-    of the elements of the array.
-    """
-    pysplit_udf = udf(
-        con_for_udf,
-        pysplit,
-        (dt.string, dt.string),
-        dt.Array(dt.string),
-        schema=test_schema,
-        replace=True,
-    )
-    splitter = ibis.literal(' ', dt.string)
-    result = pysplit_udf(table['user_name'], splitter).name('split_name')
-    result.execute()
-
-
-def test_client_udf_api(con_for_udf, test_schema, table):
-    """Test creating a UDF in database based on Python function
-    using an ibis client method."""
-
-    def multiply(a, b):
-        return a * b
-
-    multiply_udf = con_for_udf.udf(
-        multiply,
-        [dt.int32, dt.int32],
-        dt.int32,
-        schema=test_schema,
-        replace=True,
-    )
-
-    table_filt = table.filter(table['user_id'] == 2)
-    expr = table_filt[
-        multiply_udf(table_filt['user_id'], table_filt['name_length']).name(
-            'mult_result'
-        )
-    ]
-    result = expr.execute()
-    assert result['mult_result'].iloc[0] == 8
 
 
 def test_client_udf_decorator_fails(con_for_udf, test_schema):
@@ -242,4 +136,9 @@ def test_client_udf_decorator_fails(con_for_udf, test_schema):
             schema=test_schema,
             replace=True,
         )
+
+
+
+
+
 

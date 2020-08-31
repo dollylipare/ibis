@@ -965,7 +965,7 @@ class UUIDColumn(StringColumn, UUIDValue):
 
 # ------Changed-----------------------------
 # --------------string type-----------------------------
-class CLOBValue(StringValue):
+'''class CLOBValue(StringValue):
     pass  # noqa: E701,E302
 
 
@@ -974,13 +974,13 @@ class CLOBScalar(StringScalar, CLOBValue):
 
 
 class CLOBColumn(StringColumn, CLOBValue):
-    pass  # noqa: E701,E302
+    pass  # noqa: E701,E302'''
 
 
 # -------------------------------------------
 
 
-class NCLOBValue(StringValue):
+'''class NCLOBValue(StringValue):
     pass  # noqa: E701,E302
 
 
@@ -1064,7 +1064,7 @@ class NumberScalar(NumericScalar, NumberValue):
 
 
 class NumberColumn(NumericColumn, NumberValue):
-    pass  # noqa: E701,E302
+    pass  # noqa: E701,E302'''
 
 
 # -------------------------------------------

@@ -7,7 +7,7 @@ import sqlalchemy as sa
 
 import ibis.sql.alchemy as alch
 from ibis.sql.oracle.compiler import OracleDialect
-from ibis.sql.oracle import udf
+from ibis.sql.oracle.udf.api import udf
 
 import cx_Oracle  # NOQA fail early if the driver is missing
 
@@ -34,7 +34,7 @@ class OracleClient(alch.AlchemyClient):
     dialect = OracleDialect
     database_class = OracleDatabase
     table_class = OracleTable
-    os.environ['TNS_ADMIN'] = '/home/reshma_katkar/adb_virt_env'
+    os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
 
     def __init__(
         self,

@@ -16,7 +16,7 @@ from sqlalchemy.engine.interfaces import Dialect as SQLAlchemyDialect
 import ibis
 import ibis.common.exceptions as com
 import ibis.expr.analysis as L
-import ibis.sql.oracle.expr.datatypes as dts
+#import ibis.sql.oracle.expr.datatypes as dts
 import ibis.expr.datatypes as dt
 import ibis.expr.operations as ops
 import ibis.expr.schema as sch
@@ -59,13 +59,13 @@ _ibis_type_to_sqla = {
     dt.Int32: sa.Integer,
     dt.Int64: sa.BigInteger,
     # Changed
-    dts.CLOB: sa.CLOB,
+    #dts.CLOB: sa.CLOB,
     #dt.NCLOB: sa.NCLOB,
     #dt.LONG: sa.LONG,
     #dt.NUMBER: sa.NUMBER,
     #dt.BFILE: sa.BFILE,
     #dt.RAW: sa.RAW,
-    dts.LONGRAW: sa.Binary,
+    #dts.LONGRAW: sa.Binary,
 }
 
 
@@ -221,7 +221,7 @@ POSTGRES_FIELD_TO_IBIS_UNIT = {
 }
 
 
-@dt.dtype.register(OracleDialect, sa.dialects.oracle.CLOB)
+'''@dt.dtype.register(OracleDialect, sa.dialects.oracle.CLOB)
 def sa_oracle_CLOB(_, satype, nullable=True):
     return dts.CLOB(nullable=nullable)
 
@@ -253,7 +253,7 @@ def sa_oracle_RAW(_, satype, nullable=True):
 
 @dt.dtype.register(OracleDialect, sa.types.BINARY)
 def sa_oracle_LONGRAW(_, satype, nullable=True):
-    return dt.LONGRAW(nullable=nullable)
+    return dt.LONGRAW(nullable=nullable)'''
 
 
 '''-----------------------------------------------------------------'''
@@ -784,7 +784,7 @@ _operation_registry = {
     ops.Sqrt: unary(sa.func.sqrt),
     ops.Ceil: unary(sa.func.ceil),
     ops.Floor: unary(sa.func.floor),
-    ops.Power: fixed_arity(sa.func.power, 2),
+    ops.Power: fixed_arity(sa.func.pow, 2),
     ops.FloorDivide: _floor_divide,
 }
 

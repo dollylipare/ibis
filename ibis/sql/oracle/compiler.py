@@ -65,7 +65,7 @@ def _string_find(t, expr):
     sa_arg = t.translate(arg)
     sa_substr = t.translate(substr)
 
-    return sa.func.strpos(sa_arg, sa_substr) - 1
+    return sa.func.instr(sa_arg, sa_substr)
 
 
 def _extract(fmt, output_type=sa.SMALLINT):
@@ -83,15 +83,6 @@ def _second(t, expr):
     (sa_arg,) = map(t.translate, expr.op().args)
     return sa.cast(sa.func.FLOOR(sa.extract('second', sa_arg)), sa.SMALLINT)
 
-
-def _millisecond(t, expr):
-    # we get total number of milliseconds including seconds with extract so we
-    # mod 1000
-    (sa_arg,) = map(t.translate, expr.op().args)
-    return (
-        sa.cast(sa.func.floor(sa.extract('millisecond', sa_arg)), sa.SMALLINT)
-        % 1000
-    )
 
 
 _truncate_precisions = {
@@ -169,23 +160,14 @@ def _cast(t, expr):
 def _typeof(t, expr):
     (arg,) = expr.op().args
     sa_arg = t.translate(arg)
-    typ = sa.cast(sa.func.pg_typeof(sa_arg), sa.TEXT)
+    typ = sa.func.dump(sa_arg)
     # typ = sa.cast(sa.func.pg_typeof(sa_arg), sa.TEXT)
 
     # select pg_typeof('asdf') returns unknown so we have to check the child's
     # type for nullness
-    return sa.case(
-        [
-            ((typ == 'unknown') & (arg.type() != dt.null), 'text'),
-            ((typ == 'unknown') & (arg.type() == dt.null), 'null'),
-        ],
-        else_=typ,
-    )
-
+    return typ
 
 def _string_agg(t, expr):
-    # we could use sa.func.string_agg since postgres 9.0, but we can cheaply
-    # maintain backwards compatibility here, so we don't use it
     arg, sep, where = expr.op().args
     sa_arg = t.translate(arg)
     sa_sep = t.translate(sep)
@@ -194,7 +176,7 @@ def _string_agg(t, expr):
         operand = t.translate(where.ifelse(arg, ibis.NA))
     else:
         operand = sa_arg
-    return sa.func.array_to_string(sa.func.array_agg(operand), sa_sep)
+    return sa.func.listagg(operand, sa_sep)
 
 
 _strftime_to_oracle_rules = {
@@ -263,7 +245,6 @@ _scanner = re.Scanner(
 )
 
 
-# _lexicon_values = frozenset(_strftime_to_postgresql_rules.values())
 _lexicon_values = frozenset(_strftime_to_oracle_rules.values())
 
 _strftime_blacklist = frozenset(['%w', '%U', '%c', '%x', '%X', '%e'])
@@ -276,10 +257,6 @@ def _reduce_tokens(tokens, arg):
     # reduced list of tokens that accounts for blacklisted values
     reduced = []
 
-    '''non_special_tokens = (
-        frozenset(_strftime_to_postgresql_rules) - _strftime_blacklist
-    )'''
-
     non_special_tokens = (
         frozenset(_strftime_to_oracle_rules) - _strftime_blacklist
     )
@@ -288,7 +265,6 @@ def _reduce_tokens(tokens, arg):
     for token in tokens:
         # we are a non-special token %A, %d, etc.
         if token in non_special_tokens:
-            # curtokens.append(_strftime_to_postgresql_rules[token])
             curtokens.append(_strftime_to_oracle_rules[token])
 
         # we have a string like DD, to escape this we
@@ -305,7 +281,6 @@ def _reduce_tokens(tokens, arg):
             elif token == '%c' or token == '%x' or token == '%X':
                 # re scan and tokenize this pattern
                 try:
-                    # new_pattern = _strftime_to_postgresql_rules[token]
                     new_pattern = _strftime_to_oracle_rules[token]
                 except KeyError:
                     raise ValueError(
@@ -354,26 +329,6 @@ class array_search(expression.FunctionElement):
     name = 'array_search'
 
 
-'''@compiles(array_search)
-def postgresql_array_search(element, compiler, **kw):
-    needle, haystack = element.clauses
-    i = sa.func.generate_subscripts(haystack, 1).alias('i')
-    c0 = sa.column('i', type_=sa.INTEGER(), _selectable=i)
-    result = (
-        sa.func.coalesce(
-            sa.select([c0])
-            .where(haystack[c0].op('IS NOT DISTINCT FROM')(needle))
-            .order_by(c0)
-            .limit(1)
-            .as_scalar(),
-            0,
-        )
-        - 1
-    )
-    string_result = compiler.process(result, **kw)
-    return string_result'''
-
-
 @compiles(array_search)
 def oracle_array_search(element, compiler, **kw):
     needle, haystack = element.clauses
@@ -394,24 +349,10 @@ def oracle_array_search(element, compiler, **kw):
     return string_result
 
 
-'''def _find_in_set(t, expr):
-    # postgresql 9.5 has array_position, but the code below works on any
-    # version of postgres with generate_subscripts
-    # TODO: could make it even more generic by using generate_series
-    # TODO: this works with *any* type, not just strings. should the operation
-    #       itself also have this property?
-    needle, haystack = expr.op().args
-    return array_search(
-        t.translate(needle), ol.array(list(map(t.translate, haystack)))
-        #t.translate(needle), pg.array(list(map(t.translate, haystack)))
-    )'''
-
-
 def _regex_replace(t, expr):
     string, pattern, replacement = map(t.translate, expr.op().args)
 
-    # postgres defaults to replacing only the first occurrence
-    return sa.func.regexp_replace(string, pattern, replacement, 'g')
+    return sa.func.regexp_replace(string, pattern, replacement)
 
 
 def _reduction(func_name):
@@ -452,19 +393,10 @@ class regex_extract(GenericFunction):
         self.index = index
 
 
-'''@compiles(regex_extract, 'postgresql')
-def compile_regex_extract(element, compiler, **kw):
-    result = '(SELECT * FROM REGEXP_MATCHES({}, {}))[{}]'.format(
-        compiler.process(element.string, **kw),
-        compiler.process(element.pattern, **kw),
-        compiler.process(element.index, **kw),
-    )
-    return result'''
-
 
 @compiles(regex_extract, 'oracle')
 def compile_regex_extract(element, compiler, **kw):
-    result = '(SELECT * FROM REGEXP_MATCHES({}, {}))[{}]'.format(
+    result = '(SELECT regexp_substr({}, {}, {}) as TMP FROM dual)'.format(
         compiler.process(element.string, **kw),
         compiler.process(element.pattern, **kw),
         compiler.process(element.index, **kw),
@@ -474,15 +406,7 @@ def compile_regex_extract(element, compiler, **kw):
 
 def _regex_extract(t, expr):
     string, pattern, index = map(t.translate, expr.op().args)
-    result = sa.case(
-        [
-            (
-                sa.func.textregexeq(string, pattern),
-                sa.func.regex_extract(string, pattern, index + 1),
-            )
-        ],
-        else_='',
-    )
+    result = sa.func.regex_extract(string, pattern, index + 1)
     return result
 
 
@@ -491,64 +415,6 @@ def _cardinality(array):
         [(array.is_(None), None)],  # noqa: E711
         else_=sa.func.coalesce(sa.func.array_length(array, 1), 0),
     )
-
-
-def _array_repeat(t, expr):
-    """Is this really that useful?
-
-    Repeat an array like a Python list using modular arithmetic,
-    scalar subqueries, and PostgreSQL's ARRAY function.
-
-    This is inefficient if PostgreSQL allocates memory for the entire sequence
-    and the output column. A quick glance at PostgreSQL's C code shows the
-    sequence is evaluated stepwise, which suggests that it's roughly constant
-    memory for the sequence generation.
-    """
-    raw, times = map(t.translate, expr.op().args)
-
-    # SQLAlchemy uses our column's table in the FROM clause. We need a simpler
-    # expression to workaround this.
-    array = sa.column(raw.name, type_=raw.type)
-
-    # We still need to prefix the table name to the column name in the final
-    # query, so make sure the column knows its origin
-    array.table = raw.table
-
-    array_length = _cardinality(array)
-
-    # sequence from 1 to the total number of elements desired in steps of 1.
-    # the call to greatest isn't necessary, but it provides clearer intent
-    # rather than depending on the implicit postgres generate_series behavior
-    start = step = 1
-    stop = sa.func.greatest(times, 0) * array_length
-    series = sa.func.generate_series(start, stop, step).alias()
-    series_column = sa.column(series.name, type_=sa.INTEGER)
-
-    # if our current index modulo the array's length
-    # is a multiple of the array's length, then the index is the array's length
-    index_expression = series_column % array_length
-    index = sa.func.coalesce(sa.func.nullif(index_expression, 0), array_length)
-
-    # tie it all together in a scalar subquery and collapse that into an ARRAY
-    selected = sa.select([array[index]]).select_from(series)
-    return sa.func.array(selected.as_scalar())
-
-
-def _identical_to(t, expr):
-    left, right = args = expr.op().args
-    if left.equals(right):
-        return True
-    else:
-        left, right = map(t.translate, args)
-        return left.op('IS NOT DISTINCT FROM')(right)
-
-
-def _hll_cardinality(t, expr):
-    # postgres doesn't have a builtin HLL algorithm, so we default to standard
-    # count distinct for now
-    arg, _ = expr.op().args
-    sa_arg = t.translate(arg)
-    return sa.func.count(sa.distinct(sa_arg))
 
 
 def _table_column(t, expr):
@@ -581,9 +447,6 @@ def _round(t, expr):
     if digits is None:
         return sa.func.round(sa_arg)
 
-    # postgres doesn't allow rounding of double precision values to a specific
-    # number of digits (though simple truncation on doubles is allowed) so
-    # we cast to numeric and then cast back if necessary
     result = sa.func.round(sa.cast(sa_arg, sa.NUMERIC), t.translate(digits))
     if digits is not None and isinstance(arg.type(), dt.Decimal):
         return result
@@ -594,8 +457,6 @@ def _round(t, expr):
 def _mod(t, expr):
     left, right = map(t.translate, expr.op().args)
 
-    # postgres doesn't allow modulus of double precision values, so upcast and
-    # then downcast later if necessary
     if not isinstance(expr.type(), dt.Integer):
         left = sa.cast(left, sa.NUMERIC)
         right = sa.cast(right, sa.NUMERIC)
@@ -606,17 +467,6 @@ def _mod(t, expr):
     else:
         return result
 
-
-def _array_slice(t, expr):
-    arg, start, stop = expr.op().args
-    sa_arg = t.translate(arg)
-    sa_start = t.translate(start)
-
-    if stop is None:
-        sa_stop = _cardinality(sa_arg)
-    else:
-        sa_stop = t.translate(stop)
-    return sa_arg[sa_start + 1 : sa_stop]
 
 
 def _string_join(t, expr):
@@ -686,13 +536,13 @@ _operation_registry.update(
         ops.RegexExtract: _regex_extract,
         ops.StringSplit: fixed_arity(sa.func.string_to_array, 2),
         ops.StringJoin: _string_join,
-        # ops.FindInSet: _find_in_set,
         # math
         ops.Log: _log,
         ops.Log2: unary(lambda x: sa.func.log(2, x)),
         ops.Log10: unary(sa.func.log),
         ops.Round: _round,
         ops.Modulus: _mod,
+        ops.Power: fixed_arity(sa.func.power, 2),
         # dates and times
         ops.Date: unary(lambda x: sa.cast(x, sa.Date)),
         ops.DateTruncate: _timestamp_truncate,
@@ -714,7 +564,6 @@ _operation_registry.update(
         ops.ExtractHour: _extract('hour'),
         ops.ExtractMinute: _extract('minute'),
         ops.ExtractSecond: _second,
-        ops.ExtractMillisecond: _millisecond,
         ops.DayOfWeekIndex: _day_of_week_index,
         ops.DayOfWeekName: _day_of_week_name,
         ops.Sum: _reduction('sum'),
@@ -727,18 +576,8 @@ _operation_registry.update(
         # now is in the timezone of the server, but we want UTC
         ops.TimestampNow: lambda *args: sa.func.timezone('UTC', sa.func.now()),
         ops.CumulativeAll: unary(sa.func.bool_and),
-        ops.CumulativeAny: unary(sa.func.bool_or),
-        # array operations
-        ops.ArrayLength: unary(_cardinality),
-        ops.ArrayCollect: unary(sa.func.array_agg),
-        ops.ArraySlice: _array_slice,
-        ops.ArrayIndex: fixed_arity(lambda array, index: array[index + 1], 2),
-        ops.ArrayConcat: fixed_arity(
-            sa.sql.expression.ColumnElement.concat, 2
-        ),
-        ops.ArrayRepeat: _array_repeat,
-        ops.IdenticalTo: _identical_to,
-        ops.HLLCardinality: _hll_cardinality,
+        ops.CumulativeAny: unary(sa.func.bool_or)
+
     }
 )
 

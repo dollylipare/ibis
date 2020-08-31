@@ -36,13 +36,12 @@ def _random_identifier(suffix):
 
 @pytest.fixture(scope='session')
 def con():
-    return ibis.sql.oracle.api.connect("123","123","123")
-    '''return ibis.sql.oracle.api.connect(
+    return ibis.sql.oracle.api.connect(
         user=OL_USER,
         password=OL_PASS,
         database=IBIS_TEST_ORACLE_DB,
-    )'''
-   #return ibis.sql.oracle.api.connect("ADMIN","Quant1ph12020","db202008111627_medium")
+    )
+    
 
 
 @pytest.fixture(scope='module')
