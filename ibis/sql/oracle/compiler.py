@@ -84,7 +84,6 @@ def _second(t, expr):
     return sa.cast(sa.func.FLOOR(sa.extract('second', sa_arg)), sa.SMALLINT)
 
 
-
 _truncate_precisions = {
     'us': 'microseconds',
     'ms': 'milliseconds',
@@ -166,6 +165,7 @@ def _typeof(t, expr):
     # select pg_typeof('asdf') returns unknown so we have to check the child's
     # type for nullness
     return typ
+
 
 def _string_agg(t, expr):
     arg, sep, where = expr.op().args
@@ -393,7 +393,6 @@ class regex_extract(GenericFunction):
         self.index = index
 
 
-
 @compiles(regex_extract, 'oracle')
 def compile_regex_extract(element, compiler, **kw):
     result = '(SELECT regexp_substr({}, {}, {}) as TMP FROM dual)'.format(
@@ -468,7 +467,6 @@ def _mod(t, expr):
         return result
 
 
-
 def _string_join(t, expr):
     sep, elements = expr.op().args
     return sa.func.concat_ws(t.translate(sep), *map(t.translate, elements))
@@ -493,6 +491,16 @@ def _literal(t, expr):
 
 def _random(t, expr):
     return sa.func.random()
+
+
+def _day_of_week_index(t, expr):
+    (sa_arg,) = map(t.translate, expr.op().args)
+    return sa.func.to_char(sa_arg, 'd')
+
+
+def _day_of_week_name(t, expr):
+    (sa_arg,) = map(t.translate, expr.op().args)
+    return sa.func.to_char(sa_arg, 'Day')
 
 
 _operation_registry.update(
@@ -552,6 +560,8 @@ _operation_registry.update(
         ops.ExtractHour: _extract('hour'),
         ops.ExtractMinute: _extract('minute'),
         ops.ExtractSecond: _second,
+        ops.DayOfWeekIndex: _day_of_week_index,
+        ops.DayOfWeekName: _day_of_week_name,
         ops.Sum: _reduction('sum'),
         ops.Mean: _reduction('avg'),
         ops.Min: _reduction('min'),
@@ -562,8 +572,7 @@ _operation_registry.update(
         # now is in the timezone of the server, but we want UTC
         ops.TimestampNow: lambda *args: sa.func.timezone('UTC', sa.func.now()),
         ops.CumulativeAll: unary(sa.func.bool_and),
-        ops.CumulativeAny: unary(sa.func.bool_or)
-
+        ops.CumulativeAny: unary(sa.func.bool_or),
     }
 )
 
@@ -597,4 +606,3 @@ class OracleDialect(ol_alch.AlchemyDialect):
 
 
 dialect = OracleDialect
-
