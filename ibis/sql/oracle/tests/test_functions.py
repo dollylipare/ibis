@@ -1,9 +1,5 @@
 import operator
-import os
-import string
-import warnings
 from datetime import date, datetime
-import math
 
 import numpy as np
 import pandas as pd
@@ -17,13 +13,12 @@ import ibis.expr.datatypes as dt
 import ibis.expr.types as ir
 from ibis import literal as L
 from ibis.expr.window import rows_with_max_lookback
-import os
-os.environ['TNS_ADMIN'] = 'WALLET_FOLDER_PATH'
 
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('cx_Oracle')
 
 pytestmark = pytest.mark.oracle
+
 
 @pytest.mark.parametrize(
     ('left_func', 'right_func'),
@@ -111,10 +106,10 @@ def test_timestamp_cast_noop(alltypes, at, translate):
     assert isinstance(result2, ir.TimestampColumn)
 
     expected1 = at.c.timestamp_col
-    #expected2 = sa.func.timezone('UTC', sa.func.to_timestamp(at.c.int_col))
+    # expected2 = sa.func.timezone('UTC', sa.func.to_timestamp(at.c.int_col))
 
     assert str(translate(result1)) == str(expected1)
-    #assert str(translate(result2)) == str(expected2)
+    # assert str(translate(result2)) == str(expected2)
 
 
 @pytest.mark.parametrize(
@@ -122,7 +117,7 @@ def test_timestamp_cast_noop(alltypes, at, translate):
     [
         param(operator.methodcaller('year'), 2015, id='year'),
         param(operator.methodcaller('month'), 9, id='month'),
-        param(operator.methodcaller('day'), 1, id='day')
+        param(operator.methodcaller('day'), 1, id='day'),
     ],
 )
 def test_simple_datetime_operations(con, func, expected, translate):
@@ -130,23 +125,28 @@ def test_simple_datetime_operations(con, func, expected, translate):
     assert con.execute(func(value)) == expected
 
 
-
 @pytest.mark.parametrize(
-    ('query1','expected'),
+    ('query1', 'expected'),
     [
         ("select Extract(hour from TO_TIMESTAMP(:p1,:p2)) from dual", 14),
         ("select Extract(minute from TO_TIMESTAMP(:p1,:p2)) from dual", 10),
-        ("select CAST(Extract(second from TO_TIMESTAMP(:p1,:p2)) as float) from dual", 10.123),
-        ("select to_number(to_char(TO_TIMESTAMP (:p1, :p2), 'FF3'))from dual", 123),
+        (
+            "select Extract(second from TO_TIMESTAMP(:p1,:p2)) from dual",
+            10.123,
+        ),
+        (
+            "select to_number(to_char(TO_TIMESTAMP(:p1, :p2),'FF3'))from dual",
+            123,
+        ),
     ],
 )
 def test_simple_datetime_operations_1(con, query1, expected):
-    params={'p1':'10-02-02 14:10:10.123000','p2':'DD-MM-RR HH24:MI:SS.FF'}
-    ans=0
-    result=con.con.execute(query1,params)
-    for i in  result:
-        ans=i[0]
-    assert  ans == expected
+    params = {'p1': '10-02-02 14:10:10.123000', 'p2': 'DD-MM-RR HH24:MI:SS.FF'}
+    ans = 0
+    result = con.con.execute(query1, params)
+    for i in result:
+        ans = i[0]
+    assert ans == expected
 
 
 @pytest.mark.parametrize(
@@ -168,11 +168,10 @@ def test_simple_datetime_operations_1(con, query1, expected):
         ),
     ],
 )
-
 def test_binary_arithmetic(con, func, left, right, expected):
-        expr = func(left, right)
-        result = con.execute(expr)
-        assert result == expected
+    expr = func(left, right)
+    result = con.execute(expr)
+    assert result == expected
 
 
 @pytest.mark.parametrize(
@@ -201,8 +200,8 @@ def test_binary_arithmetic(con, func, left, right, expected):
     ],
 )
 def test_typeof(con, value, expected):
-    ans=con.execute(value.typeof())
-    literal_ans=L(ans)
+    ans = con.execute(value.typeof())
+    literal_ans = L(ans)
     op = operator.methodcaller('substr', 4, 2)
     result = con.execute(op(literal_ans))
     assert result == expected
@@ -276,16 +275,21 @@ def test_capitalize(con, value, expected):
 def test_repeat(con):
     word = 'foo '
     repeat_count = 4
-    word_len=len(word)
-    word_literal=L(word)
+    word_len = len(word)
+    word_literal = L(word)
     op = operator.methodcaller('rpad', word_len * repeat_count, word_literal)
     result = con.execute(op(word_literal))
     assert result == 'foo foo foo foo '
 
 
 def test_re_replace(con):
-    expr = L('This line    contains    more      than one   spacing      between      words').re_replace('( ){2,}', ' ')
-    assert con.execute(expr) == 'This line contains more than one spacing between words'
+    expr = L(
+        'This linecontains    more  than one   spacing  between words'
+    ).re_replace('( ){2,}', ' ')
+    assert (
+        con.execute(expr)
+        == 'This line contains more than one spacing between words'
+    )
 
 
 def test_translate(con):
@@ -306,8 +310,6 @@ def test_string_functions(con, expr, expected):
     assert con.execute(expr) == expected
 
 
-
-
 @pytest.mark.parametrize(
     ('expr', 'expected'),
     [
@@ -315,7 +317,9 @@ def test_string_functions(con, expr, expected):
             L('abcd').re_extract('([a-z]+)', 0), 'abcd', id='re_extract_whole'
         ),
         # valid group number but no match => empty string
-        param(L('abcd').re_extract(r'(\d)', 0), None, id='re_extract_no_match'),
+        param(
+            L('abcd').re_extract(r'(\d)', 0), None, id='re_extract_no_match'
+        ),
         # match but not a valid group number => NULL
         param(L('abcd').re_extract('abcd', 3), None, id='re_extract_match'),
     ],
@@ -460,7 +464,6 @@ def test_bucket(alltypes, df, func, pandas_func):
     tm.assert_series_equal(result, expected, check_names=False)
 
 
-
 @pytest.mark.parametrize(
     ('distinct1', 'distinct2', 'expected1', 'expected2'),
     [
@@ -503,7 +506,6 @@ FROM anon_3""".format(
         expected1, expected2
     )
     assert str(result) == expected
-
 
 
 def test_group_concat(alltypes, df):
@@ -577,14 +579,10 @@ def test_rolling_window(alltypes, func, df):
     window = ibis.window(order_by=t.timestamp_col, preceding=6, following=0)
     f = getattr(t.month, func)
     df_f = getattr(df.month.rolling(7, min_periods=0), func)
-    result = (
-        t.projection([f().over(window).name('month')])
-        .execute()
-        .month
-    )
+    result = t.projection([f().over(window).name('month')]).execute().month
     expected = df_f()
-    result=result.astype('int64')
-    expected=expected.astype('int64')
+    result = result.astype('int64')
+    expected = expected.astype('int64')
     tm.assert_series_equal(result, expected)
 
 
@@ -623,10 +621,9 @@ def test_partitioned_window(alltypes, func, df):
     expected = (
         df.groupby('string_col').apply(roller(func)).reset_index(drop=True)
     )
-    result=result.astype('int64')
-    expected=expected.astype('int64')
+    result = result.astype('int64')
+    expected = expected.astype('int64')
     tm.assert_series_equal(result, expected)
-
 
 
 @pytest.mark.parametrize('func', ['sum', 'min', 'max'])
@@ -637,13 +634,11 @@ def test_cumulative_ordered_window(alltypes, func, df):
     f = getattr(t.double_col, func)
     expr = t.projection([(t.double_col - f().over(window)).name('double_col')])
     result = expr.execute().double_col
-    result=result.astype('int64')
+    result = result.astype('int64')
     expected = df.double_col - getattr(df.double_col, 'cum%s' % func)()
     expected = expected.astype('int64')
 
     tm.assert_series_equal(result, expected)
-
-
 
 
 def test_null_column(alltypes):
@@ -652,7 +647,6 @@ def test_null_column(alltypes):
     expr = t.mutate(na_column=ibis.NA).na_column
     result = expr.execute()
     tm.assert_series_equal(result, pd.Series([None] * nrows, name='na_column'))
-
 
 
 def test_window_with_arithmetic(alltypes, df):
@@ -683,7 +677,6 @@ def test_head(con):
     result = t.head().execute()
     expected = t.limit(5).execute()
     tm.assert_frame_equal(result, expected)
-
 
 
 def test_rank(con):
@@ -756,12 +749,7 @@ def test_negate_non_boolean(con, field, df):
 
 
 @pytest.mark.parametrize(
-    ('opname', 'expected'),
-    [
-        ('year', {2020}),
-        ('month', {8}),
-        ('day', {24}),
-    ],
+    ('opname', 'expected'), [('year', {2020}), ('month', {8}), ('day', {24})]
 )
 def test_date_extract_field(db, opname, expected):
     op = operator.methodcaller(opname)
@@ -777,7 +765,6 @@ def test_boolean_reduction(alltypes, opname, df):
     expr = op(alltypes.id)
     result = expr.execute()
     assert result == op(df.id)
-
 
 
 @pytest.fixture(
@@ -798,15 +785,8 @@ def tz(request):
     return request.param
 
 
-
-
 def test_timestamp_type_accepts_all_timezones(con):
     assert all(
         dt.Timestamp(row.tzname).timezone == row.tzname
         for row in con.con.execute('SELECT tzname FROM V$TIMEZONE_NAMES')
     )
-
-
-
-
-

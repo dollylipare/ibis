@@ -1,6 +1,5 @@
 import contextlib
 import getpass
-import os
 from typing import Optional
 
 import sqlalchemy as sa
@@ -34,7 +33,6 @@ class OracleClient(alch.AlchemyClient):
     dialect = OracleDialect
     database_class = OracleDatabase
     table_class = OracleTable
-    os.environ['TNS_ADMIN'] = 'WALLET_FOLDER_PATH'
 
     def __init__(
         self,
@@ -56,10 +54,10 @@ class OracleClient(alch.AlchemyClient):
             )
         else:
             sa_url = sa.engine.url.make_url(url)
-        super().__init__(sa.create_engine(sa_url,max_identifier_length=128))
+        super().__init__(sa.create_engine(sa_url, max_identifier_length=128))
         self.database_name = database
-        self.uurl=sa_url
-        
+        self.uurl = sa_url
+
     def find_db(self):
         return self.uurl
 
@@ -120,8 +118,7 @@ class OracleClient(alch.AlchemyClient):
 
     def list_databases(self):
         return [
-            row.name
-            for row in self.con.execute('select name from v$database')
+            row.name for row in self.con.execute('select name from v$database')
         ]
 
     def list_schemas(self):
@@ -203,4 +200,3 @@ class OracleClient(alch.AlchemyClient):
             replace=replace,
             name=name,
         )
-
