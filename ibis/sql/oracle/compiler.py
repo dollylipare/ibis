@@ -126,7 +126,7 @@ def _timestamp_add(t, expr):
 def _is_nan(t, expr):
     (arg,) = expr.op().args
     sa_arg = t.translate(arg)
-    return sa_arg == float('nan')
+    return sa_arg == float('None')
 
 
 def _is_inf(t, expr):
@@ -215,7 +215,7 @@ except AttributeError:
     )
 
 
-# translate strftime spec into mostly equivalent PostgreSQL spec
+# translate strftime spec into mostly equivalent Oracle spec
 _scanner = re.Scanner(
     # double quotes need to be escaped
     [('"', lambda scanner, token: r'\"')]
@@ -495,18 +495,6 @@ def _random(t, expr):
     return sa.func.random()
 
 
-def _day_of_week_index(t, expr):
-    (sa_arg,) = map(t.translate, expr.op().args)
-    return sa.cast(
-        sa.cast(sa.extract('dow', sa_arg) + 6, sa.SMALLINT) % 7, sa.SMALLINT
-    )
-
-
-def _day_of_week_name(t, expr):
-    (sa_arg,) = map(t.translate, expr.op().args)
-    return sa.func.trim(sa.func.to_char(sa_arg, 'Day'))
-
-
 _operation_registry.update(
     {
         ops.Literal: _literal,
@@ -564,8 +552,6 @@ _operation_registry.update(
         ops.ExtractHour: _extract('hour'),
         ops.ExtractMinute: _extract('minute'),
         ops.ExtractSecond: _second,
-        ops.DayOfWeekIndex: _day_of_week_index,
-        ops.DayOfWeekName: _day_of_week_name,
         ops.Sum: _reduction('sum'),
         ops.Mean: _reduction('avg'),
         ops.Min: _reduction('min'),

@@ -34,7 +34,7 @@ class OracleClient(alch.AlchemyClient):
     dialect = OracleDialect
     database_class = OracleDatabase
     table_class = OracleTable
-    os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
+    os.environ['TNS_ADMIN'] = 'WALLET_FOLDER_PATH'
 
     def __init__(
         self,
@@ -83,7 +83,7 @@ class OracleClient(alch.AlchemyClient):
         Returns
         -------
         db : OracleDatabase
-            An :class:`ibis.sql.postgres.client.OracleDatabase` instance.
+            An :class:`ibis.sql.oracle.client.OracleDatabase` instance.
         Notes
         -----
         This creates a new connection if `name` is both not ``None`` and not
@@ -109,7 +109,7 @@ class OracleClient(alch.AlchemyClient):
         Returns
         -------
         schema : OracleSchema
-            An :class:`ibis.sql.postgres.client.OracleSchema` instance.
+            An :class:`ibis.sql.oracle.client.OracleSchema` instance.
         """
         return self.database().schema(name)
 
@@ -119,7 +119,6 @@ class OracleClient(alch.AlchemyClient):
         return self.database_name
 
     def list_databases(self):
-        # http://dba.stackexchange.com/a/1304/58517
         return [
             row.name
             for row in self.con.execute('select name from v$database')
@@ -193,7 +192,7 @@ class OracleClient(alch.AlchemyClient):
         -------
         Callable
         Function that takes in ColumnExpr arguments and returns an instance
-        inheriting from PostgresUDFNode
+        inheriting from OracleUDFNode
         """
         return udf(
             client=self,

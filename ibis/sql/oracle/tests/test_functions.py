@@ -18,7 +18,7 @@ import ibis.expr.types as ir
 from ibis import literal as L
 from ibis.expr.window import rows_with_max_lookback
 import os
-os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
+os.environ['TNS_ADMIN'] = 'WALLET_FOLDER_PATH'
 
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('cx_Oracle')
@@ -535,8 +535,6 @@ def test_not_exists(alltypes, df):
 
 
 def test_interactive_repr_shows_error(alltypes):
-    # #591. Doing this in PostgreSQL because so many built-in functions are
-    # not available
 
     expr = alltypes.double_col.approx_median()
 

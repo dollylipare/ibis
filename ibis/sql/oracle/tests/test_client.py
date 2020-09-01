@@ -24,6 +24,7 @@ import ibis.sql.oracle.expr.datatypes as dts
 import ibis.expr.types as ir
 import ibis.sql.alchemy as alch  # noqa: E402
 from ibis.tests.util import assert_equal
+from ibis.sql.oracle.api import compile
 
 sa = pytest.importorskip('sqlalchemy')
 pytest.importorskip('cx_Oracle')
@@ -89,9 +90,8 @@ def test_database_layer(con, alltypes):
 def test_compile_toplevel():
     t = ibis.table([('foo', 'double')], name='t0')
 
-    # it works!
     expr = t.foo.sum()
-    result = ibis.postgres.compile(expr)
+    result = ibis.sql.oracle.api.compile(expr)
     expected = "SELECT sum(t0.foo) AS sum \nFROM t0 AS t0"  # noqa
 
     assert str(result) == expected
