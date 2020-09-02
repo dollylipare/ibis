@@ -1,5 +1,5 @@
 # 1.Installation
-----
+
 
 Connecting to Oracle Exadata is possible only via the use of Oracle Database Wallet. The connector has been tested with the Autonomous Transaction Processing (ATP) Database set up on the Oracle Cloud Infrastructure. It makes use of the python library cx-oracle which is OSI approved BSD licensed library, conforming to Python DB API 2.0 specification. It needs the library installed as a dependency, where the connection will be made. Installation by pip can be executed using the following command:
 
@@ -13,7 +13,7 @@ Additionally, Oracle Instant Client is a required dependency, which is available
 The Oracle Exadata client is accessible through the **ibis.sql.oracle namespace**.
 The **ibis.sql.oracle.connect** with a SQLAlchemy compatible connection string to create a client connection
 # 2.Code snippet for connecting to oracle Exadata using ibis:-
-----
+
 ```sh
 import ibis
 import os
@@ -22,11 +22,12 @@ os.environ['TNS_ADMIN'] =  'wallet_folder_path'
 from ibis.sql.oracle.api import connect 
 db=ibis.sql.oracle.api.connect("ADMIN","Quant1ph12020","db202008111627_medium")
 tb_name=db.table("students")
-print(tb_name.count().execute())
+result=tb_name.count().execute()
+print(result)
 ```
 
 # 3.Usage
----
+
 + **Schema for the ‘students_pointer’ table:-**
   ```
   CREATE TABLE students_pointer 
@@ -167,7 +168,7 @@ print(tb_name.count().execute())
 
 
 # 4.Steps to run Test scripts
----
+
 + **Schemas of the tables created in the database:**
   Create table named  “functional_alltypes” in the database with the below schema:-
   ```sh
@@ -230,7 +231,7 @@ print(tb_name.count().execute())
 
 
 # 5.Limitations
----
+
 Since ‘Boolean’ datatype is not supported in the oracle database few functions returning boolean value will not work.
 
 
