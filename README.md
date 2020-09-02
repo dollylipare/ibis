@@ -7,7 +7,7 @@ Connecting to Oracle Exadata is possible only via the use of Oracle Database Wal
 
 Additionally, Oracle Instant Client is a required dependency, which is available in the list of  Oracle Downloads. There are certain environment variables that need to be set, the list of which is available in the code snippet given below. These environment variables are related to discovery of the location of the Oracle Wallet for authorization of connection to Oracle Database. 
 
-`TNS_ADMIN=<WALLET FOLDER PATH>`
+`TNS_ADMIN=<WALLET FOLDER PATH>`\
 `LD_LIBRARY_PATH=<PATH TO ORACLE INSTANT CLIENT LIB>`
 
 The Oracle Exadata client is accessible through the **ibis.sql.oracle namespace**.
@@ -219,11 +219,11 @@ print(result)
       IBIS_ORACLE_PASS = os.environ.get('IBIS_TEST_ORACLE_PASSWORD', 'password')
       ```
 
-+ **To run individual test file:-**
++ **To run individual test file:-**\
   ` pytest test_client.py`
 
 
-+ **To run whole the test folder:-**
++ **To run whole the test folder:-**\
   ` pytest tests/`
 
 
