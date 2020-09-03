@@ -1,6 +1,6 @@
 from ibis.sql.alchemy import to_sqlalchemy
-from ibis.sql.oracle.client import OracleClient
-from ibis.sql.oracle.compiler import dialect, rewrites  # noqa: F401
+from ibis.sql.ibis_oracle.client import OracleClient
+from ibis.sql.ibis_oracle.compiler import dialect, rewrites  # noqa: F401
 
 
 def compile(expr, params=None):
@@ -18,4 +18,3 @@ def connect(
         url=url,
         driver=driver,
     )
-

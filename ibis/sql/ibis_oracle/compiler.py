@@ -19,7 +19,7 @@ import ibis.expr.datatypes as dt
 import ibis.expr.operations as ops
 import ibis.expr.types as ir
 import ibis.sql.alchemy as alch
-import ibis.sql.oracle.alchemy as ol_alch
+import ibis.sql.ibis_oracle.alchemy as ol_alch
 
 # used for literal translate
 from ibis.sql.alchemy import (

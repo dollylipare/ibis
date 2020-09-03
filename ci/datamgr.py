@@ -12,6 +12,7 @@ import pandas as pd
 import sqlalchemy as sa
 from plumbum import local
 from toolz import dissoc
+
 os.environ['TNS_ADMIN'] = '/home/dolly_lipare/adb_virt_env'
 SCRIPT_DIR = Path(__file__).parent.absolute()
 DATA_DIR_NAME = 'ibis-testing-data'
@@ -65,7 +66,6 @@ def init_database(driver, params, schema=None, recreate=True, **kwargs):
         recreate_database(driver, new_params, **kwargs)
 
     url = sa.engine.url.URL(driver, **new_params)
-    #url = url='oracle://{user}:{password}@{sid}'.format(user=new_params['username'],password=new_params['password'],sid=new_params['database'])
     engine = sa.create_engine(url, **kwargs)
 
     if schema:
@@ -477,9 +477,9 @@ def clickhouse(schema, tables, data_directory, **params):
         insert(engine, table, df)
 
 
-#Oracle database connection
+# Oracle database connection
 @cli.command()
-@click.option('-h', '--host', default='adb.us-ashburn-1.oraclecloud.com')
+@click.option('-h', '--host', default='host')
 @click.option('-P', '--port', default=1522, type=int)
 @click.option('-u', '--user', default='USER')
 @click.option('-p', '--password', default='PASSWORD')
@@ -496,6 +496,7 @@ def oracle(schema, tables, data_directory, **params):
     data_directory = Path(data_directory)
     engine = init_database('oracle+cx_oracle', params, schema)
     insert_tables(engine, tables, data_directory)
+
 
 @cli.command()
 @click.option('-d', '--data-directory', default=DATA_DIR)
