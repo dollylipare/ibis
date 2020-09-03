@@ -10,8 +10,8 @@ Additionally, Oracle Instant Client is a required dependency, which is available
 `TNS_ADMIN=<WALLET FOLDER PATH>`\
 `LD_LIBRARY_PATH=<PATH TO ORACLE INSTANT CLIENT LIB>`
 
-The Oracle Exadata client is accessible through the **ibis.sql.oracle namespace**.
-The **ibis.sql.oracle.connect** with a SQLAlchemy compatible connection string to create a client connection
+The Oracle Exadata client is accessible through the **ibis.sql.ibis_oracle namespace**.
+The **ibis.sql.ibis_oracle.connect** with a SQLAlchemy compatible connection string to create a client connection
 # 2.Code snippet for connecting to oracle Exadata using ibis:-
 
 ```sh
@@ -214,7 +214,7 @@ print(result)
       
       @pytest.fixture(scope='session')
       def con():
-          ibis.sql.oracle.api.connect("user_name","password","database_name")
+          ibis.sql.ibis_oracle.api.connect("user_name","password","database_name")
       ```
       
     * oracle/tests/udf/test_client.py
