@@ -19,8 +19,8 @@ import ibis
 import os
 os.environ['TNS_ADMIN'] =  'wallet_folder_path'
 # Example:-  os.environ['TNS_ADMIN'] = '/home/user_name/adb_virt_env'
-from ibis.sql.oracle.api import connect 
-db=ibis.sql.oracle.api.connect("username","password","database")
+from ibis.sql.ibis_oracle.api import connect 
+db=connect("username","password","database")
 tb_name=db.table("students")
 result=tb_name.count().execute()
 print(result)
@@ -28,6 +28,12 @@ print(result)
 
 # 3.Usage
 
++ **Important Note**
+
+  In the "client.py" file make sure you update the "Wallet_Path_Location" in the code shown below:-
+  ```
+  os.environ['TNS_ADMIN'] = '<Wallet_Path_Location>'
+  ```
 + **Schema for the ‘students_pointer’ table:-**
   ```
   CREATE TABLE students_pointer 
@@ -53,8 +59,8 @@ print(result)
 + **Queries showing implementation of different functions**
   ```
   import ibis
-  from ibis.sql.oracle.api import connect
-  con=ibis.sql.oracle.api.connect("user_name","password","database_name")
+  from ibis.sql.ibis_oracle.api import connect
+  con=connect("user_name","password","database_name")
   table_details=con.table('students_pointer')
   table_records=con.table('students_pointer').execute()
 
@@ -168,6 +174,7 @@ print(result)
 
 
 # 4.Steps to run Test scripts
+
 
 + **Schemas of the tables created in the database:**
   Create table named  “functional_alltypes” in the database with the below schema:-
