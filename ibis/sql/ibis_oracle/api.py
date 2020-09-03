@@ -1,6 +1,10 @@
+from third_party.ibis.ibis_oracle.client import OracleClient
+from third_party.ibis.ibis_oracle.compiler import (  # noqa: F401
+    dialect,
+    rewrites,
+)
+
 from ibis.sql.alchemy import to_sqlalchemy
-from ibis.sql.ibis_oracle.client import OracleClient
-from ibis.sql.ibis_oracle.compiler import dialect, rewrites  # noqa: F401
 
 
 def compile(expr, params=None):

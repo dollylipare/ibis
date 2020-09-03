@@ -1,9 +1,9 @@
 import sqlalchemy as sa
+import third_party.ibis.ibis_oracle.expr.datatypes as dt
 from sqlalchemy.dialects.oracle.base import OracleDialect
 
 import ibis.expr.datatypes as dt11
 import ibis.sql.alchemy as s_al
-import ibis.sql.ibis_oracle.expr.datatypes as dt
 
 _ibis_type_to_sqla = {
     dt.CLOB: sa.CLOB,

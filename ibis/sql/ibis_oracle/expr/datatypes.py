@@ -3,10 +3,10 @@ import numbers
 import re
 import typing
 
+import third_party.ibis.ibis_oracle.expr.types as ir
 from multipledispatch import Dispatcher
 
 import ibis.expr.datatypes as dt
-import ibis.sql.ibis_oracle.expr.types as ir
 
 Token = collections.namedtuple('Token', ('type', 'value'))
 
