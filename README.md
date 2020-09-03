@@ -20,7 +20,7 @@ import os
 os.environ['TNS_ADMIN'] =  'wallet_folder_path'
 # Example:-  os.environ['TNS_ADMIN'] = '/home/user_name/adb_virt_env'
 from ibis.sql.oracle.api import connect 
-db=ibis.sql.oracle.api.connect("ADMIN","Quant1ph12020","db202008111627_medium")
+db=ibis.sql.oracle.api.connect("username","password","database")
 tb_name=db.table("students")
 result=tb_name.count().execute()
 print(result)
